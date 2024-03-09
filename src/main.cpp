@@ -19,6 +19,10 @@ static void throttle_rcv(const CANMessage &inMessage) {
 
     // Send motor speed command to controller
     Serial2.printf("!G 1 %hu _", percent * 10);
+
+    if (Serial2.read() == '+') {
+        Serial.printf("Controller echo!");
+    }
 }
 
 static void steering_rcv(const CANMessage &inMessage) {
