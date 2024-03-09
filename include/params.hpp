@@ -2,8 +2,11 @@
 
 #include "Arduino.h"
 
-/// DAC output to ESC
-inline constexpr auto THROTTLE_PIN = PA4;
+/// Max speed allowed of motor
+#define MAX_SPEED_PERCENT 0.2
+
+inline constexpr auto ROBOTEQ_UART_TX = PA2; // A7
+inline constexpr auto ROBOTEQ_UART_RX = PA3; // A3
 /// PWM output to steering servo
 inline constexpr auto STEERING_PIN = PA7;
 /// Encoder input pin

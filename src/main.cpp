@@ -12,17 +12,13 @@ static void throttle_rcv(const CANMessage &inMessage) {
 
     uint8_t percent = inMessage.data[0];
 
+    // Cap max speed
+    percent = uint8_t(percent * MAX_SPEED_PERCENT);
+
     Serial.printf("Received message, setting throttle to %hu %\n", percent);
 
-    /*
-    ESC uses differential voltage, so we need to invert our voltage.
-    4096 is 3.1V, and the ESCs lowest value that will still move
-    with no load is 3.8, so this should match roughly to the
-    actual full range the ESC can be set to.
-    */
-    auto out_val = (uint16_t) (4092 - (percent / 100.0) * 4092);
-    Serial.printf("Setting throttle to %hu %\n", out_val);
-    analogWrite(THROTTLE_PIN, out_val);
+    // Send motor speed command to controller
+    Serial2.printf("!G 1 %hu _", percent * 10);
 }
 
 static void steering_rcv(const CANMessage &inMessage) {
@@ -97,11 +93,23 @@ static void inc_count() {
 void setup() {
     // Pin setup
     pinMode(LED_BUILTIN, OUTPUT);
-    pinMode(THROTTLE_PIN, OUTPUT);
     pinMode(STEERING_PIN, OUTPUT);
     pinMode(ENCODER_PIN, INPUT_PULLUP);
+    pinMode(ROBOTEQ_UART_RX, OUTPUT);
+    pinMode(ROBOTEQ_UART_TX, OUTPUT);
 
     Serial.begin(115200);
+
+    // Roboteq serial
+    Serial2.begin(115200, SERIAL_8N1);
+
+    // Check for presence of roboteq with query
+    Serial2.write((char) 0x5);
+    if (Serial2.read() == 0x6) {
+        Serial.println("Roboteq detected!");
+    } else {
+        Serial.println("Roboteq not detected :(");
+    }
 
     // Our bus is 512k baud
     ACAN_STM32_Settings sett{500'000};
