@@ -19,9 +19,11 @@ static void throttle_rcv(const CANMessage &inMessage) {
 
     // Send motor speed command to controller
     Serial2.printf("!G 1 %hu _", percent * 10);
+    auto response = Serial2.readStringUntil('\r');
+    response.trim();
 
-    if (Serial2.read() == '+') {
-        Serial.printf("Controller echo!");
+    if (response == "+") {
+        Serial.println("Controller OK");
     }
 }
 
@@ -107,13 +109,15 @@ void setup() {
     // Roboteq serial
     Serial2.begin(115200, SERIAL_8N1);
 
-    // Check for presence of roboteq with query
+    // Sit in a loop until roboteq detected. Needed to avoid race condition TODO could be weird
     Serial2.write((char) 0x5);
-    if (Serial2.read() == 0x6) {
-        Serial.println("Roboteq detected!");
-    } else {
+    while (Serial2.read() != 0x6) {
         Serial.println("Roboteq not detected :(");
+        Serial2.write((char) 0x5);
     }
+    Serial.println("Connected to Roboteq :)");
+    // Setup controller params like voltage limits
+    setup_roboteq();
 
     // Our bus is 512k baud
     ACAN_STM32_Settings sett{500'000};
