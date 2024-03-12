@@ -18,12 +18,14 @@ static void throttle_rcv(const CANMessage &inMessage) {
     Serial.printf("Received message, setting throttle to %hu %\n", percent);
 
     // Send motor speed command to controller
-    Serial2.printf("!G 1 %hu _", percent * 10);
-    auto response = Serial2.readStringUntil('\r');
-    response.trim();
+    RoboteqSerial.printf("!G 1 %hu _", percent * 10);
+    auto response = RoboteqSerial.readStringUntil('\r');
 
-    if (response == "+") {
+    if (roboteq_res_ok(response)) {
         Serial.println("Controller OK");
+    } else {
+        Serial.println("Controller BAD!");
+        Serial.println(response);
     }
 }
 
@@ -101,23 +103,31 @@ void setup() {
     pinMode(LED_BUILTIN, OUTPUT);
     pinMode(STEERING_PIN, OUTPUT);
     pinMode(ENCODER_PIN, INPUT_PULLUP);
-    pinMode(ROBOTEQ_UART_RX, OUTPUT);
+    pinMode(ROBOTEQ_UART_RX, INPUT_PULLUP);
     pinMode(ROBOTEQ_UART_TX, OUTPUT);
 
     Serial.begin(115200);
 
     // Roboteq serial
-    Serial2.begin(115200, SERIAL_8N1);
+    RoboteqSerial.begin(115200, SERIAL_8N1);
 
-    // Sit in a loop until roboteq detected. Needed to avoid race condition TODO could be weird
-    Serial2.write((char) 0x5);
-    while (Serial2.read() != 0x6) {
+    // Sit in a loop until roboteq detected. Needed to avoid race condition TODO could remove now if we want
+    RoboteqSerial.write((char) 0x05);
+    int read = 0;
+    while (read != 0x06) {
         Serial.println("Roboteq not detected :(");
-        Serial2.write((char) 0x5);
+        RoboteqSerial.write((char) 0x05);
+        delay(100);
+        read = RoboteqSerial.read();
     }
     Serial.println("Connected to Roboteq :)");
-    // Setup controller params like voltage limits
-    setup_roboteq();
+
+    // Attempt to eat acks remaining
+    while (RoboteqSerial.read() != -1) {}
+    // Garbage read since the first one always fails for some reason (DON'T REMOVE LOL)
+    RoboteqSerial.print("~UVL _");
+    RoboteqSerial.flush();
+    RoboteqSerial.readStringUntil('\r');
 
     // Our bus is 512k baud
     ACAN_STM32_Settings sett{500'000};
@@ -131,7 +141,6 @@ void setup() {
     if (can.begin(sett, filters)) {
         Serial.println("Can OK");
     }
-
     // Set our outputs to 12-bit resolution 0-4096
     analogWriteResolution(DAC_BITS);
 

@@ -5,8 +5,11 @@
 /// Max speed allowed of motor
 #define MAX_SPEED_PERCENT 0.2
 
-inline constexpr auto ROBOTEQ_UART_TX = PA2; // A7
-inline constexpr auto ROBOTEQ_UART_RX = PA3; // A3
+// Roboteq serial connection
+inline constexpr auto ROBOTEQ_UART_TX = PA9; // D1
+inline constexpr auto ROBOTEQ_UART_RX = PA10; // D2
+#define RoboteqSerial Serial1
+
 /// PWM output to steering servo
 inline constexpr auto STEERING_PIN = PA7;
 /// Encoder input pin
