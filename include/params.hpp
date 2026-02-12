@@ -19,4 +19,4 @@ inline constexpr auto ENCODER_SAMPLE_PERIOD_US = 10 * 5000;
 /// Teeth on the encoder rings
 inline constexpr auto ENCODER_TEETH = 600.0f;
 /// Wheel circumference in meters
-inline constexpr float WHEEL_CIRC_METER = 2 * PI * (0.13335 / 2);
+inline constexpr float WHEEL_CIRC_METER = 0.845; // 0.845 meters
